@@ -1,0 +1,16 @@
+# client/__init__.py
+from .api_client import (
+    register_user,
+    login_user,
+    create_ride,
+    get_pending_rides,
+    accept_ride,
+    complete_ride,
+    get_ride_history,
+    submit_rating,
+    get_rating,
+    get_preferences,
+    save_preferences,
+    disconnect,
+    list_drivers,
+)
