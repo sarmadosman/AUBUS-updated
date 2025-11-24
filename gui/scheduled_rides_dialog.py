@@ -24,13 +24,6 @@ def _seconds_to_hhmm(sec):
 class ScheduledRidesDialog(QDialog):
     """
     Shared "My scheduled rides" dialog for both passengers and drivers.
-
-    role = "passenger" or "driver"
-    Uses:
-      - api_client.get_scheduled_rides(username, role)
-      - api_client.driver_accept_scheduled_ride(ride_id)
-      - api_client.driver_decline_scheduled_ride(ride_id)
-      - api_client.passenger_cancel_scheduled_ride(ride_id)
     """
 
     def __init__(self, main_window, role: str, parent=None):
@@ -99,8 +92,7 @@ class ScheduledRidesDialog(QDialog):
 
         layout.addLayout(btn_row)
 
-    # ----------------- Data loading -----------------
-
+    #Data loading
     def _load_rides(self):
         username = self.main_window.current_username or ""
         client = self.main_window.api_client
@@ -128,7 +120,6 @@ class ScheduledRidesDialog(QDialog):
 
     def _populate_table(self, rides):
         self.table.setRowCount(len(rides))
-
         for row, r in enumerate(rides):
             ride_id = r.get("id")
             passenger = r.get("passenger_username", "")
@@ -174,8 +165,7 @@ class ScheduledRidesDialog(QDialog):
 
         return ride_id
 
-    # ----------------- Driver actions -----------------
-
+    # Driver actions
     def _on_accept_selected(self):
         if self.role != "driver":
             return
@@ -234,8 +224,7 @@ class ScheduledRidesDialog(QDialog):
         QMessageBox.information(self, "Scheduled ride", "Scheduled ride declined.")
         self._load_rides()
 
-    # ----------------- Passenger actions -----------------
-
+    # Passenger actions
     def _on_cancel_selected(self):
         if self.role != "passenger":
             return

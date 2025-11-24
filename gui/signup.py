@@ -1,5 +1,3 @@
-# gui/signup.py
-
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -14,9 +12,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-from client import api_client  # use the stateless helper functions
-
-
+from client import api_client
 class SignupPage(QWidget):
     def __init__(self, main_window):
         super().__init__()
@@ -32,9 +28,8 @@ class SignupPage(QWidget):
         title.setStyleSheet("font-size: 22px; font-weight: bold; margin-bottom: 10px;")
         main_layout.addWidget(title)
 
-        # ---------------------------------------
-        # Basic info form
-        # ---------------------------------------
+
+        # Basic info
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignRight)
 
@@ -59,9 +54,8 @@ class SignupPage(QWidget):
 
         main_layout.addLayout(form)
 
-        # ---------------------------------------
+        
         # Weekly schedule for drivers
-        # ---------------------------------------
         self.schedule_group = QGroupBox("Weekly departure schedule (drivers only)")
         sched_layout = QFormLayout(self.schedule_group)
 
@@ -75,12 +69,9 @@ class SignupPage(QWidget):
 
         main_layout.addWidget(self.schedule_group)
 
-        # Initially hidden for passengers
         self._on_role_changed(self.role_combo.currentText())
 
-        # ---------------------------------------
         # Buttons
-        # ---------------------------------------
         btn_row = QHBoxLayout()
 
         self.signup_btn = QPushButton("Sign up")
@@ -95,18 +86,13 @@ class SignupPage(QWidget):
         main_layout.addLayout(btn_row)
         main_layout.addStretch()
 
-    # ---------------------------------------
-    # Role change: show/hide schedule group
-    # ---------------------------------------
-
+    
+    # Show/hide schedule group
     def _on_role_changed(self, role: str):
         is_driver = (role == "driver")
         self.schedule_group.setVisible(is_driver)
-
-    # ---------------------------------------
+    
     # Signup logic
-    # ---------------------------------------
-
     def _on_signup_clicked(self):
         username = self.username_edit.text().strip()
         password = self.password_edit.text().strip()

@@ -1,10 +1,9 @@
 """
 AUBus backend package.
-
 Provides:
-- db_api: database and business logic
+- db_api: database
 - server: JSON-over-TCP server
-- config: configuration constants
+- config: configuration constants, ie global constants
 """
 
 from . import db_api

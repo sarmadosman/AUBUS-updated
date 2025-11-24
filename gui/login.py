@@ -58,5 +58,4 @@ class LoginPage(QWidget):
             QMessageBox.critical(self, "Login failed", msg)
             return
 
-        # If we get here, MainWindow already navigated to the correct home page.
         QMessageBox.information(self, "Login", "Login successful.")

@@ -1,3 +1,4 @@
+#PREMIUM FEATURES: PERSONAL STATSS
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -12,18 +13,15 @@ from PyQt5.QtCore import Qt
 
 WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-
 class StatsPage(QWidget):
     """
-    Premium 'My Stats' dashboard.
-
+    Premium 'My Stats' info.
     Shows, depending on role:
-      - Total rides (as passenger OR as driver)
-      - Distinct drivers (for passengers) or passengers (for drivers)
+      - Total rides
+      - Distinct drivers or passengers
       - Rides per weekday
       - Average rating received
     """
-
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
@@ -42,13 +40,13 @@ class StatsPage(QWidget):
         self.info_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.info_label)
 
-        # Summary labels
+        #Summary labels
         self.summary_label = QLabel("")
         self.summary_label.setAlignment(Qt.AlignCenter)
         self.summary_label.setWordWrap(True)
         layout.addWidget(self.summary_label)
 
-        # Weekday stats table
+        #Weekday stats table
         weekday_box = QVBoxLayout()
         weekday_title = QLabel("Rides per weekday")
         weekday_title.setAlignment(Qt.AlignLeft)
@@ -80,12 +78,10 @@ class StatsPage(QWidget):
 
         layout.addLayout(btn_row)
 
-    # ---------------- public API ----------------
-
+    # public API
     def refresh_ui(self):
         """
-        Called by MainWindow.show_stats_page().
-        Fetches data from server and updates the stats.
+        Called by MainWindow.show_stats_page() and fetches data from server and updates the stats.
         """
         username = self.main_window.current_username
         role = self.main_window.current_role
@@ -101,7 +97,7 @@ class StatsPage(QWidget):
 
         client = self.main_window.api_client
 
-        # 1) Fetch ride history for this user/role
+        #Fetch ride history for this user
         try:
             resp = client.get_ride_history(username=username, role=role)
         except Exception as e:
@@ -115,7 +111,7 @@ class StatsPage(QWidget):
 
         rides = resp.get("rides", []) or []
 
-        # 2) Compute stats from history
+        #Compute stats from history
         total_rides = len(rides)
 
         # Distinct counterparties, rides per weekday
@@ -136,7 +132,7 @@ class StatsPage(QWidget):
             if driver:
                 distinct_drivers.add(driver)
 
-        # 3) Fetch my average rating from the server
+        #Fetch average rating from the server
         avg_rating = None
         try:
             r_resp = client.get_rating(username)
@@ -150,7 +146,7 @@ class StatsPage(QWidget):
         else:
             rating_text = f"{avg_rating:.2f} / 5"
 
-        # 4) Build summary text depending on role
+        #Build summary text depending on role
         summary_parts = []
 
         if role == "passenger":
@@ -175,11 +171,10 @@ class StatsPage(QWidget):
 
         self.summary_label.setText("\n".join(summary_parts))
 
-        # 5) Fill weekday table
+        #Fill weekday table
         self._fill_weekday_table(weekday_counts)
 
-    # ---------------- internal helpers ----------------
-
+    #internal helpers
     def _clear_weekday_table(self):
         self.weekday_table.setRowCount(0)
 

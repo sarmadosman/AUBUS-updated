@@ -6,9 +6,6 @@ from datetime import datetime
 from . import db_api
 from .config import SERVER_HOST, SERVER_PORT
 
-# ============================================================
-#  Globals
-# ============================================================
 
 # Track live users: username → socket
 connected_drivers = {}
@@ -18,15 +15,10 @@ connected_passengers = {}
 driver_status = {}
 
 
-# ============================================================
 #  Utility Helpers
-# ============================================================
-
-
 def safe_send(sock, obj):
     """
     Send JSON safely to a socket, newline-delimited.
-
     Every message is a single JSON object followed by '\n'.
     """
     try:
@@ -42,11 +34,7 @@ def now_weekday_int():
     return datetime.now().weekday()
 
 
-# ============================================================
 #  Matching helpers
-# ============================================================
-
-
 def _is_driver_available_online(username: str) -> bool:
     """
     A driver is considered available if:
@@ -58,7 +46,7 @@ def _is_driver_available_online(username: str) -> bool:
     status = driver_status.get(username, "available")
     return status == "available"
 
-
+#PREMIUM: PREFERRED/ONLY PREFERRED DRIVERS (NOT RANDOM MATCHING)
 def get_matched_available_drivers(
     area: str,
     weekday: int,
@@ -69,16 +57,13 @@ def get_matched_available_drivers(
     """
     Use DB schedule matching, then filter to drivers who are online + available.
 
-    Normal behaviour (preferred_only=False):
-      - If target_driver is provided and they are:
-          * in the matched list
-          * online + available
-        then returns [target_driver] only.
+    preferred_only=False:
+      - If target_driver is provided and they are in the matched list and online + available, then returns [target_driver] only.
       - Otherwise returns all matched drivers who are online + available.
 
-    Preferred-only behaviour (preferred_only=True and target_driver set):
+   preferred_only=True and target_driver set:
       - Only returns [target_driver] if they match schedule + are online+available.
-      - Otherwise returns [] (no fallback to other drivers).
+      - Otherwise returns [].
     """
     matched = db_api.get_available_drivers(area, weekday, target_seconds)
 
@@ -98,11 +83,8 @@ def get_matched_available_drivers(
     return [u for u in matched if _is_driver_available_online(u)]
 
 
-# ============================================================
+
 #  Notification Helpers
-# ============================================================
-
-
 def notify_matched_drivers(ride_info, target_driver=None, preferred_only: bool = False):
     """
     Notify online + available drivers that match area + time.
@@ -147,11 +129,8 @@ def notify_matched_drivers(ride_info, target_driver=None, preferred_only: bool =
     return notified
 
 
-# ============================================================
+
 #  Client Handler
-# ============================================================
-
-
 def handle_client(sock, addr):
     print(f"[NEW CONNECTION] {addr}")
     connected = True
@@ -176,15 +155,11 @@ def handle_client(sock, addr):
                 action = data.get("action")
                 username = data.get("username")
 
-                # ====================================================
                 #  REGISTER
-                # ====================================================
                 if action == "register":
                     response = db_api.register_user(data)
 
-                # ====================================================
                 #  LOGIN
-                # ====================================================
                 elif action == "login":
                     response = db_api.login_user(data)
                     if response["status"] == "success":
@@ -204,9 +179,8 @@ def handle_client(sock, addr):
                         prefs = db_api.get_user_preferences(uname)
                         response["preferences"] = prefs
 
-                # ====================================================
+                
                 #  PROFILE: GET / UPDATE
-                # ====================================================
                 elif action == "get_profile":
                     # username comes from data["username"]
                     response = db_api.get_user_profile(data["username"])
@@ -215,9 +189,8 @@ def handle_client(sock, addr):
                     # data contains username + fields to update
                     response = db_api.update_user_profile(data)
 
-                # ====================================================
-                #  CREATE RIDE (Passenger, same-day / current behaviour)
-                # ====================================================
+                
+                #  CREATE RIDE (Passenger, same-day)
                 elif action == "create_ride":
                     weekday = data.get("weekday", now_weekday_int())
                     area = data["area"]
@@ -226,7 +199,7 @@ def handle_client(sock, addr):
                     target_driver = data.get("target_driver_username")
                     preferred_only = bool(data.get("preferred_only", False))
 
-                    # Convert time string once here
+                    # Convert time string
                     try:
                         time_sec = db_api.time_to_seconds(time_str)
                     except Exception as e:
@@ -237,7 +210,7 @@ def handle_client(sock, addr):
                         safe_send(sock, response)
                         continue
 
-                    # Check if there are any drivers online + available who match
+                    # Check if there are any drivers online and available who match
                     available_drivers = get_matched_available_drivers(
                         area=area,
                         weekday=weekday,
@@ -247,7 +220,7 @@ def handle_client(sock, addr):
                     )
 
                     if not available_drivers:
-                        # No driver can take this ride right now → do NOT create DB row
+                        # If no driver can take this ride right nowm then do NOT create DB row
                         response = {
                             "status": "error",
                             "message": "No drivers are currently available for that time in your area.",
@@ -274,7 +247,7 @@ def handle_client(sock, addr):
                                 "weekday": weekday,
                             }
 
-                            # notify matched (and possibly preferred) drivers
+                            # notify matched drivers
                             threading.Thread(
                                 target=notify_matched_drivers,
                                 args=(info,),
@@ -287,9 +260,8 @@ def handle_client(sock, addr):
 
                         response = create_res
 
-                # ====================================================
-                #  PREMIUM: search drivers for future scheduled ride
-                # ====================================================
+                
+                # PREMIUM: search drivers for future scheduled ride
                 elif action == "search_scheduled_drivers":
                     area = data.get("area")
                     date_str = data.get("date")
@@ -309,12 +281,8 @@ def handle_client(sock, addr):
                         except Exception as e:
                             response = {"status": "error", "message": str(e)}
 
-                # ====================================================
-                #  PREMIUM: create a scheduled ride (future date)
-                # ====================================================
-                # ====================================================
-                #  PREMIUM: create a scheduled ride (future date)
-                # ====================================================
+                
+                # PREMIUM: create a scheduled ride
                 elif action == "create_scheduled_ride":
                     area = data.get("area")
                     date_str = data.get("date")
@@ -378,9 +346,8 @@ def handle_client(sock, addr):
                         except Exception as e:
                             response = {"status": "error", "message": str(e)}
 
-                # ====================================================
-                #  PREMIUM: get / update scheduled rides
-                # ====================================================
+                
+                # PREMIUM: get / update scheduled rides
                 elif action == "get_scheduled_rides":
                     username = data.get("username")
                     role = data.get("role")
@@ -552,9 +519,8 @@ def handle_client(sock, addr):
                                     "message": "Scheduled ride canceled.",
                                 }
 
-                # ====================================================
-                #  DRIVER ACCEPTS RIDE (immediate)
-                # ====================================================
+                
+                #  DRIVER ACCEPTS RIDE
                 elif action == "accept_ride":
                     ride_id = data["ride_id"]
                     driver_username = data["username"]
@@ -593,9 +559,8 @@ def handle_client(sock, addr):
                             "message": "Ride already taken or invalid.",
                         }
 
-                # ====================================================
-                #  GET PENDING RIDES (Driver)
-                # ====================================================
+                
+                #  GET PENDING RIDES
                 elif action == "get_pending_rides":
                     area = data["area"]
                     response = {
@@ -603,9 +568,8 @@ def handle_client(sock, addr):
                         "rides": db_api.get_pending_rides(area),
                     }
 
-                # ====================================================
-                #  COMPLETE RIDE
-                # ====================================================
+                
+                #  COMPLETE RIDES
                 elif action == "complete_ride":
                     ride_id = data["ride_id"]
                     driver_username = data["username"]
@@ -648,30 +612,26 @@ def handle_client(sock, addr):
                             "message": "Ride not found or cannot be completed.",
                         }
 
-                # ====================================================
+                
                 #  SUBMIT RATING
-                # ====================================================
                 elif action == "submit_rating":
                     response = db_api.submit_rating(data)
 
-                # ====================================================
+
                 #  GET AVERAGE RATING
-                # ====================================================
                 elif action == "get_rating":
                     avg = db_api.get_average_rating(data["username"])
                     response = {"status": "success", "rating": avg}
 
-                # ====================================================
+                
                 #  RIDE HISTORY
-                # ====================================================
                 elif action == "get_ride_history":
                     response = db_api.get_ride_history(
                         data["username"], data["role"]
                     )
 
-                # ====================================================
-                #  LIST DRIVERS (premium)
-                # ====================================================
+                
+                #  LIST DRIVERS FOR SEARCHING
                 elif action == "list_drivers":
                     area = data.get("area")
                     response = db_api.list_drivers(area)
@@ -686,9 +646,8 @@ def handle_client(sock, addr):
                         else:
                             d["status"] = "offline"
 
-                # ====================================================
-                #  SET DRIVER STATUS (available / dnd)
-                # ====================================================
+                
+                #  SET DRIVER STATUS (available or dnd)
                 elif action == "set_status":
                     # only meaningful for drivers
                     uname = data.get("username")
@@ -704,9 +663,8 @@ def handle_client(sock, addr):
                             "message": "Driver not connected or username missing.",
                         }
 
-                # ====================================================
+                
                 #  GET / SAVE USER PREFERENCES
-                # ====================================================
                 elif action == "get_preferences":
                     response = {
                         "status": "success",
@@ -719,9 +677,9 @@ def handle_client(sock, addr):
                     )
                     response = {"status": "success"}
 
-                # ====================================================
+                
                 #  DISCONNECT
-                # ====================================================
+                
                 elif action == "disconnect":
                     connected = False
                     response = {"status": "success", "message": "Disconnected."}
@@ -732,9 +690,8 @@ def handle_client(sock, addr):
                         connected_passengers.pop(uname, None)
                         driver_status.pop(uname, None)
 
-                # ====================================================
+                
                 #  DECLINE RIDE
-                # ====================================================
                 elif action == "decline_ride":
                     ride_id = data.get("ride_id")
                     driver_username = data.get("username")
@@ -773,9 +730,8 @@ def handle_client(sock, addr):
                                 "message": "Ride not found or not pending.",
                             }
 
-                # ====================================================
+                
                 #  UNKNOWN ACTION
-                # ====================================================
                 else:
                     response = {
                         "status": "error",
@@ -793,11 +749,8 @@ def handle_client(sock, addr):
     print(f"[DISCONNECTED] {addr}")
 
 
-# ============================================================
-#  Server Start
-# ============================================================
 
-
+#SERVER STARTER
 def start_server(host=SERVER_HOST, port=SERVER_PORT):
     print(
         "[DEBUG] Server datetime now =",
@@ -822,10 +775,8 @@ def start_server(host=SERVER_HOST, port=SERVER_PORT):
         t.start()
 
 
-# ============================================================
-#  Run directly
-# ============================================================
 
+# Run directly
 if __name__ == "__main__":
     print("[INFO] Starting AUBus server...")
     start_server()

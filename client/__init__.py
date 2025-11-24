@@ -1,4 +1,3 @@
-# client/__init__.py
 from .api_client import (
     register_user,
     login_user,

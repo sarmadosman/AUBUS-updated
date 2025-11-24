@@ -1,3 +1,4 @@
+#PREMIUM: CHOOSE THEME
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -11,19 +12,14 @@ from PyQt5.QtCore import Qt
 
 class ThemeSettingsPage(QWidget):
     """
-    Simple premium page to choose between basic themes:
-
-        - Light (default/system)
-        - Dark
-
-    It uses MainWindow.apply_theme(theme_name) under the hood and
+    Light or Dark mode
+    MainWindow.apply_theme(theme_name) under the hood and
     reads the current theme from MainWindow.current_preferences.
     """
 
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-
         self._build_ui()
 
     def _build_ui(self):
@@ -54,7 +50,7 @@ class ThemeSettingsPage(QWidget):
 
         layout.addSpacing(10)
 
-        # Info label
+        #Info label
         self.info_label = QLabel("")
         self.info_label.setAlignment(Qt.AlignCenter)
         self.info_label.setStyleSheet("color: gray;")
@@ -62,7 +58,7 @@ class ThemeSettingsPage(QWidget):
 
         layout.addStretch()
 
-        # Buttons row
+        #Buttons row
         btn_row = QHBoxLayout()
         btn_row.addStretch()
 
@@ -77,12 +73,10 @@ class ThemeSettingsPage(QWidget):
 
         layout.addLayout(btn_row)
 
-    # ---------------- public API ----------------
-
+    # public API
     def refresh_ui(self):
         """
         Called from MainWindow.show_theme_settings() before showing the page.
-        It syncs the radio buttons with the current theme.
         """
         prefs = self.main_window.current_preferences or {}
         theme = prefs.get("theme") or prefs.get("theme_name") or "default"
@@ -97,8 +91,7 @@ class ThemeSettingsPage(QWidget):
 
         self.info_label.setText("")
 
-    # ---------------- internal handlers ----------------
-
+    # internal handlers
     def _on_apply_clicked(self):
         if self.dark_radio.isChecked():
             theme_name = "dark"

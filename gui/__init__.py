@@ -1,5 +1,3 @@
-# gui/__init__.py
-
 """
 GUI package for the AUBus application.
 

@@ -13,14 +13,7 @@ from PyQt5.QtCore import Qt
 
 class RatingDialog(QDialog):
     """
-    1–5 star rating dialog with optional comment.
-
-    Usage:
-
-        dlg = RatingDialog(self, who_label="driver Alice")
-        if dlg.exec_() == QDialog.Accepted:
-            score = dlg.rating   # int 1..5
-            comment = dlg.comment
+    1–5 star rating dialog with optional comment
     """
 
     def __init__(self, parent=None, who_label: str = "the other user"):
@@ -49,7 +42,7 @@ class RatingDialog(QDialog):
         info.setWordWrap(True)
         layout.addWidget(info)
 
-        # Star buttons
+        #Star buttons
         stars_row = QHBoxLayout()
         stars_row.addWidget(QLabel("Rating:"))
 
@@ -72,7 +65,7 @@ class RatingDialog(QDialog):
 
         self._update_star_display()
 
-        # Comment
+        #comment
         comment_label = QLabel("Optional comment:")
         layout.addWidget(comment_label)
 
@@ -95,7 +88,7 @@ class RatingDialog(QDialog):
         btn_row.addWidget(cancel_btn)
         layout.addLayout(btn_row)
 
-    # -------- internal helpers --------
+    #helpers
 
     def _on_star_clicked(self, value: int):
         self.rating = max(1, min(5, value))

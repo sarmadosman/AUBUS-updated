@@ -24,14 +24,13 @@ from gui.scheduled_rides_dialog import ScheduledRidesDialog  # "My scheduled rid
 
 
 def _now_hhmm() -> str:
-    """Return current time as HH:MM for compact chat timestamps."""
+    """Return current time as HH:MM"""
     t = datetime.now().time()
     return f"{t.hour:02d}:{t.minute:02d}"
 
-
 class PassengerChatClient(QThread):
     received = pyqtSignal(str)
-    typing = pyqtSignal()          # typing indicator from driver
+    typing = pyqtSignal()
     disconnected = pyqtSignal()
 
     def __init__(self, ip: str, port: int, parent=None):
@@ -91,18 +90,17 @@ class HomePassenger(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-
         self.chat_client: PassengerChatClient | None = None
         self.chat_connected = False
 
         self.current_ride_id = None
         self.driver_username = None
         self.last_accepted_ride = None
-        self._rating_shown_for_ride = False  # ensure rating dialog only once
+        self._rating_shown_for_ride = False
 
         # Premium: preferred driver selection
         self.selected_driver_username = None
-        self._last_driver_list = []  # cached list from last search
+        self._last_driver_list = []
 
         # Weather window
         self.weather_window: WeatherApp | None = None
@@ -117,8 +115,7 @@ class HomePassenger(QWidget):
 
     def shutdown(self):
         """
-        Stop the passenger chat client thread cleanly (if running).
-        Called from MainWindow on logout / app exit.
+        Stop the passenger chat client thread cleanly
         """
         if self.chat_client:
             try:
@@ -143,7 +140,7 @@ class HomePassenger(QWidget):
         layout.addWidget(self.title_label)
         layout.addWidget(self.info_label)
 
-        # --- Request ride *today* section ---
+        # Request ride section
         ride_box = QVBoxLayout()
 
         ride_label = QLabel("Get a ride now (today)")
@@ -175,7 +172,7 @@ class HomePassenger(QWidget):
 
         layout.addLayout(ride_box)
 
-        # --- Schedule future ride section ---
+        # Schedule future ride section
         sched_box = QVBoxLayout()
 
         sched_label = QLabel("Schedule a future ride with a specific driver")
@@ -214,7 +211,7 @@ class HomePassenger(QWidget):
 
         layout.addLayout(sched_box)
 
-        # --- Premium: browse / select drivers ---
+        # Premium: browse / select drivers
         drivers_box = QVBoxLayout()
 
         drivers_label = QLabel("Browse drivers")
@@ -276,7 +273,7 @@ class HomePassenger(QWidget):
 
         layout.addLayout(drivers_box)
 
-        # --- Chat UI ---
+        # Chat UI
         layout.addWidget(QLabel("Chat:"))
         self.chat_box = QTextEdit()
         self.chat_box.setReadOnly(True)
@@ -321,7 +318,7 @@ class HomePassenger(QWidget):
         self.typing_label.setStyleSheet("color: gray; font-style: italic;")
         layout.addWidget(self.typing_label)
 
-        # --- History + stats + profile + theme + weather + scheduled + logout ---
+        # History + stats + profile + theme + weather + scheduled + logout
         bottom_row = QHBoxLayout()
         self.history_btn = QPushButton("View history")
         self.history_btn.clicked.connect(self.main_window.show_ride_history)
@@ -366,7 +363,7 @@ class HomePassenger(QWidget):
         if self.main_window.current_area and not self.driver_area_edit.text().strip():
             self.driver_area_edit.setText(self.main_window.current_area)
 
-        # Load preferred driver from preferences (if any)
+        # Load preferred driver from preferences
         prefs = getattr(self.main_window.api_client, "preferences", None) or {}
         preferred = prefs.get("preferred_driver_username")
 
@@ -380,8 +377,7 @@ class HomePassenger(QWidget):
         else:
             self.preferred_driver_label.setText("Preferred driver: (none)")
 
-    # ---------------- weather ----------------
-
+    #Weather
     def _show_weather(self):
         if self.weather_window is None:
             self.weather_window = WeatherApp(default_location="Beirut")
@@ -390,22 +386,19 @@ class HomePassenger(QWidget):
         self.weather_window.raise_()
         self.weather_window.activateWindow()
 
-    # ---------------- scheduled rides view ----------------
-
+    #Scheduled rides view
     def _show_scheduled_rides(self):
         dlg = ScheduledRidesDialog(self.main_window, role="passenger", parent=self)
         dlg.exec_()
 
-    # ---------------- profile ----------------
-
+    #Profile
     def _show_profile(self):
         dlg = ProfileDialog(self.main_window, self)
         dlg.exec_()
         # Area / schedule / password might have changed; reflect area in label + filters
         self.refresh_ui()
 
-    # ---------------- request ride TODAY ----------------
-
+    #Request ride
     def _on_request_ride(self):
         uname = self.main_window.current_username
         area = self.main_window.current_area
@@ -446,8 +439,7 @@ class HomePassenger(QWidget):
             self, "Requested", f"Ride {self.current_ride_id} created."
         )
 
-    # ---------------- schedule FUTURE ride ----------------
-
+    #Schedule ride
     def _on_schedule_ride(self):
         uname = self.main_window.current_username
         area = self.main_window.current_area
@@ -517,8 +509,7 @@ class HomePassenger(QWidget):
             ),
         )
 
-    # ---------------- premium: browse/select drivers ----------------
-
+    #PREMIUM: browse/select drivers
     def _on_search_drivers(self):
         area_filter = self.driver_area_edit.text().strip()
         if not area_filter:
@@ -626,7 +617,7 @@ class HomePassenger(QWidget):
                 f"Preferred driver set locally, but saving to server failed:\n{e}",
             )
 
-        # Also fill the scheduled-driver field if empty
+        #fill the scheduled-driver field if empty
         if not self.sched_driver_edit.text().strip():
             self.sched_driver_edit.setText(username)
 
@@ -651,12 +642,9 @@ class HomePassenger(QWidget):
         # Clear the manual username field
         self.driver_username_edit.clear()
 
-        # If the scheduled-driver field was using the same preferred username,
-        # clear it too so the UI fully reflects the change.
         if prev_preferred and self.sched_driver_edit.text().strip() == prev_preferred:
             self.sched_driver_edit.clear()
 
-        # Persist to server preferences
         client = self.main_window.api_client
         prefs = client.preferences or {}
         new_prefs = dict(prefs)
@@ -679,8 +667,7 @@ class HomePassenger(QWidget):
         QMessageBox.information(self, "Preferred driver", "Cleared preferred driver.")
 
 
-    # ---------------- realtime: ride accepted & completed ----------------
-
+    #Ride accepted & completed
     def handle_ride_accepted(self, msg: dict):
         """
         Called by MainWindow when a 'ride_accepted' notification arrives.
@@ -721,8 +708,8 @@ class HomePassenger(QWidget):
 
     def handle_ride_completed(self, msg: dict):
         """
-        Called by MainWindow when 'ride_completed' notification arrives.
-        This is the correct moment to prompt the PASSENGER for a rating.
+        Called by MainWindow when'ride_completed' notification arrives.
+        Prompt the passenger for a rating.
         """
         if self._rating_shown_for_ride:
             return  # already handled
@@ -769,14 +756,13 @@ class HomePassenger(QWidget):
         self.driver_username = None
         self.last_accepted_ride = None
 
-    # ---------------- scheduled ride notifications ----------------
+    # scheduled ride notifications
 
     def handle_scheduled_ride_updated(self, msg: dict):
         """
-        Called by MainWindow when a 'scheduled_ride_updated' notification arrives
-        for this passenger. This is used when a driver accepts/declines a
-        scheduled ride, or if it is otherwise updated.
-        Expected msg shape (best-effort):
+        Called by MainWindow when a 'scheduled_ride_updated' notification arrives for this passenger. 
+        Used when a driver accepts/declines a scheduled ride, or if it is otherwise updated.
+        msg shape:
           {
             "action": "scheduled_ride_updated",
             "ride_id": ...,
@@ -800,7 +786,7 @@ class HomePassenger(QWidget):
 
         QMessageBox.information(self, "Scheduled ride update", text)
 
-    # chat hooks
+    #Chat hooks
     def _on_chat_received(self, msg: str):
         # Use the real driver username if we know it, otherwise fall back
         name = self.driver_username or "Driver"
@@ -826,8 +812,8 @@ class HomePassenger(QWidget):
 
     def _on_chat_disconnected(self):
         """
-        Chat ended – just show a system message.
-        Rating is now triggered ONLY by the 'ride_completed' notification.
+        Chat ended: show a system message.
+        Rating is now triggered by the 'ride_completed' notification.
         """
         self.chat_connected = False
         self.chat_box.append(f"[{_now_hhmm()}] [System] Chat disconnected.")

@@ -10,8 +10,8 @@ from gui.signup import SignupPage
 from gui.home_passenger import HomePassenger
 from gui.home_driver import HomeDriver
 from gui.ride_history import RideHistoryPage
-from gui.theme_settings import ThemeSettingsPage   # premium page
-from gui.stats_page import StatsPage               # premium page
+from gui.theme_settings import ThemeSettingsPage   # premium
+from gui.stats_page import StatsPage               # premium 
 
 
 WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -51,10 +51,9 @@ class MainWindow(QMainWindow):
         self._pending_ride_completed_notifications = []  # "ride_completed"
         self._pending_other_notifications = []
 
-        # QTimer for polling notifications
+
         self.notification_timer = QTimer(self)
 
-        # Central stack
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
@@ -84,7 +83,7 @@ class MainWindow(QMainWindow):
         # Apply default theme on startup
         self.apply_theme_from_preferences()
 
-    # ---------------- Theme handling (basic light/dark) ----------------
+    # Theme handling (basic light/dark)
 
     def apply_theme_from_preferences(self):
         """
@@ -176,7 +175,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 print(f"[WARN] Failed to save theme preference: {e}")
 
-    # ---------------- Navigation ----------------
+    # Navigation
 
     def show_login(self):
         self.stack.setCurrentWidget(self.login_page)
@@ -212,7 +211,7 @@ class MainWindow(QMainWindow):
         self.stats_page.refresh_ui()
         self.stack.setCurrentWidget(self.stats_page)
 
-    # ---------------- Login / Logout / Signup ----------------
+    # Login / Logout / Signup
 
     def attempt_login(self, username: str, password: str):
         """
@@ -315,7 +314,7 @@ class MainWindow(QMainWindow):
             weekly_schedule=weekly_schedule,
         )
 
-    # ---------------- Realtime notification handlers ----------------
+    # Realtime notification handlers
 
     def handle_new_ride_notification(self, msg: dict):
         """Driver: 'new_ride'."""
@@ -340,8 +339,7 @@ class MainWindow(QMainWindow):
         """
         self._pending_other_notifications.append(msg)
 
-    # ---------------- Process notifications on GUI thread ----------------
-
+    # Process notifications on GUI thread
     def _process_notifications(self):
         # Driver: new ride requests
         while self._pending_driver_notifications:
@@ -359,7 +357,7 @@ class MainWindow(QMainWindow):
             else:
                 weekday_str = str(weekday_int)
 
-            # Fetch passenger's average rating (if any)
+            # Fetch passenger's average rating
             rating_text = "N/A"
             try:
                 r_resp = self.api_client.get_rating(passenger)
@@ -430,7 +428,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 print(f"[WARN] Failed to process ride_completed in passenger home: {e}")
 
-        # Other notifications: scheduled rides etc.
+        # Other notifications: scheduled rides etc...
         while self._pending_other_notifications:
             msg = self._pending_other_notifications.pop(0)
             action = msg.get("action")

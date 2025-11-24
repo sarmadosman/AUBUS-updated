@@ -1,11 +1,3 @@
-"""
-client/api_client.py
-
-High-level Python client for the AUBus TCP JSON server.
-
-Protocol detail: each message is a single JSON object terminated by '\n'.
-"""
-
 import json
 import socket
 from typing import Any, Dict, Optional, Callable
@@ -18,12 +10,7 @@ DEFAULT_TIMEOUT = 5.0
 BUFFER_SIZE = 4096
 MSG_DELIM = b"\n"
 
-
-# ----------------------------------------------------------------------
 # Core helper: send a single JSON request and receive a JSON response
-# ----------------------------------------------------------------------
-
-
 def send_request(
     payload: Dict[str, Any],
     host: str = DEFAULT_SERVER_HOST,
@@ -87,11 +74,8 @@ def send_request(
         }
 
 
-# ----------------------------------------------------------------------
-# Stateless helpers (register/login/rides/ratings/preferences/profile)
-# ----------------------------------------------------------------------
 
-
+# Helpers (register/login/rides/ratings/preferences/profile)
 def register_user(
     username: str,
     password: str,
@@ -149,7 +133,7 @@ def disconnect(
     }
     return send_request(payload, host=host, port=port)
 
-
+#PREMIUM: PREFERRED/ONLY PREFERRED DRIVERS (NOT RANDOM MATCHING)
 def create_ride(
     passenger_username: str,
     area: str,
@@ -160,8 +144,7 @@ def create_ride(
     port: int = DEFAULT_SERVER_PORT,
 ) -> Dict[str, Any]:
     """
-    Create a ride request *for today* at time_str.
-
+    Create a ride request for today at time_str.
     If target_driver_username is given:
       - preferred_only=False (default): try preferred driver first, then fall back.
       - preferred_only=True: only match to that driver; if not available, fail.
@@ -179,9 +162,7 @@ def create_ride(
 
     return send_request(payload, host=host, port=port)
 
-
 client_create_ride = create_ride
-
 
 def get_pending_rides(
     area: str,
@@ -194,9 +175,7 @@ def get_pending_rides(
     }
     return send_request(payload, host=host, port=port)
 
-
 client_get_pending_rides = get_pending_rides
-
 
 def accept_ride(
     ride_id: int,
@@ -215,9 +194,7 @@ def accept_ride(
     }
     return send_request(payload, host=host, port=port)
 
-
 client_accept_ride = accept_ride
-
 
 def complete_ride(
     ride_id: int,
@@ -335,13 +312,10 @@ def list_drivers(
         payload["area"] = area
     return send_request(payload, host=host, port=port)
 
-
 client_list_drivers = list_drivers
 
 
-# --- profile (stateless) ------------------------------------------------
-
-
+#PROFILE
 def get_profile(
     username: str,
     host: str = DEFAULT_SERVER_HOST,
@@ -381,9 +355,7 @@ def update_profile(
     return send_request(payload, host=host, port=port)
 
 
-# --- SCHEDULED RIDES (stateless helpers) --------------------------------
-
-
+#PREMIUM: SCHEDULED RIDES
 def create_scheduled_ride(
     passenger_username: str,
     driver_username: str,
@@ -395,7 +367,6 @@ def create_scheduled_ride(
 ) -> Dict[str, Any]:
     """
     Schedule a future ride with a specific driver.
-
     date_str: "YYYY-MM-DD"
     time_str: "HH:MM"
     """
@@ -468,19 +439,11 @@ def passenger_cancel_scheduled_ride(
     return send_request(payload, host=host, port=port)
 
 
-# ----------------------------------------------------------------------
-# RealtimeClient – persistent connection with notifications
-# ----------------------------------------------------------------------
-
-
 class RealtimeClient:
     """
-    Realtime AUBus client with a long-lived TCP connection and a listener
-    thread for server push notifications.
-
-    Messages are newline-delimited JSON objects.
+    Realtime AUBus client with a persistent TCP connection and a listener
+    thread for server push notifications. Messages are JSON objects.
     """
-
     def __init__(
         self,
         host: str = DEFAULT_SERVER_HOST,
@@ -506,15 +469,14 @@ class RealtimeClient:
         self.area: Optional[str] = None
         self.preferences: Optional[Dict[str, Any]] = None
 
-        # Notification callbacks (set these from GUI)
+        # Notification callbacks
         self.on_new_ride: Optional[Callable[[Dict[str, Any]], None]] = None
         self.on_ride_accepted: Optional[Callable[[Dict[str, Any]], None]] = None
         self.on_ride_declined: Optional[Callable[[Dict[str, Any]], None]] = None
         self.on_ride_completed: Optional[Callable[[Dict[str, Any]], None]] = None
         self.on_other_notification: Optional[Callable[[Dict[str, Any]], None]] = None
 
-    # ------------- connection management -------------
-
+    #CONNECTION MANAGEMENT
     def _ensure_connected(self) -> None:
         if self._sock is not None:
             return
@@ -537,8 +499,7 @@ class RealtimeClient:
             pass
         self._sock = None
 
-    # ------------- core send/receive -------------
-
+    #SEND/RECEIVE
     def _send_and_wait(
         self, payload: Dict[str, Any], timeout: Optional[float] = None
     ) -> Dict[str, Any]:
@@ -636,8 +597,7 @@ class RealtimeClient:
             else:
                 print("[RealtimeClient] Notification:", msg)
 
-    # ------------- high-level API -------------
-
+    #API
     def connect_and_login(self, username: str, password: str) -> Dict[str, Any]:
         self._ensure_connected()
         return self.login(username, password)
@@ -855,8 +815,7 @@ class RealtimeClient:
         self.close()
         return resp
 
-    # --- profile (realtime) ---------------------------------------------
-
+    #PROFILE
     def get_profile(self, username: Optional[str] = None) -> Dict[str, Any]:
         if username is None:
             username = self.username or ""
@@ -898,8 +857,7 @@ class RealtimeClient:
             self.area = area
         return resp
 
-    # --- scheduled rides (realtime) ------------------------------------
-
+    #PREMIUM: SCHEDULED RIDES
     def create_scheduled_ride(
         self,
         passenger_username: str,

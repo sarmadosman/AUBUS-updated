@@ -29,7 +29,7 @@ def _now_hhmm() -> str:
 
 class DriverChatServer(QThread):
     received = pyqtSignal(str)
-    typing = pyqtSignal()          # typing indicator from passenger
+    typing = pyqtSignal()
     disconnected = pyqtSignal()
 
     def __init__(self, port: int, parent=None):
@@ -54,7 +54,7 @@ class DriverChatServer(QThread):
                     break
                 text = data.decode("utf-8")
                 if text.strip() == "__TYPING__":
-                    # special control packet: passenger is typing
+                    # Passenger is typing
                     self.typing.emit()
                     continue
                 self.received.emit(text)
@@ -121,8 +121,8 @@ class HomeDriver(QWidget):
 
     def shutdown(self):
         """
-        Stop the driver chat server thread cleanly (if running).
-        Called from MainWindow on logout / app exit.
+        Stop the driver chat server thread cleanly.
+        Called from MainWindow on logout.
         """
         if self.chat_server:
             try:
@@ -133,8 +133,7 @@ class HomeDriver(QWidget):
                 pass
             self.chat_server = None
 
-    # ------------ UI ------------
-
+    #UI
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignTop)
@@ -149,7 +148,7 @@ class HomeDriver(QWidget):
         layout.addWidget(self.title_label)
         layout.addWidget(self.info_label)
 
-        # Status row (Available / DND)
+        #STATUS RWO
         status_row = QHBoxLayout()
         self.status_label = QLabel("Status: available")
         self.status_label.setAlignment(Qt.AlignLeft)
@@ -166,7 +165,7 @@ class HomeDriver(QWidget):
         status_row.addWidget(self.status_dnd_btn)
         layout.addLayout(status_row)
 
-        # Buttons row (rides)
+        #RIDE BUTTONS
         btn_row = QHBoxLayout()
 
         self.refresh_btn = QPushButton("Refresh rides")
@@ -189,7 +188,7 @@ class HomeDriver(QWidget):
 
         layout.addLayout(btn_row)
 
-        # Table of pending rides
+        #PENDING RIDES TABLE
         self.table = QTableWidget()
         self.table.setColumnCount(6)
         self.table.setHorizontalHeaderLabels(
@@ -262,7 +261,7 @@ class HomeDriver(QWidget):
         self.weather_btn = QPushButton("Weather")
         self.weather_btn.clicked.connect(self._show_weather)
 
-        # NEW: scheduled rides view
+        # Scheduled rides view
         self.scheduled_btn = QPushButton("Scheduled rides")
         self.scheduled_btn.clicked.connect(self._show_scheduled_rides)
 
@@ -281,8 +280,6 @@ class HomeDriver(QWidget):
 
         layout.addStretch()
 
-    # ------------ public helpers ------------
-
     def refresh_ui(self):
         uname = self.main_window.current_username or "?"
         area = self.main_window.current_area or "?"
@@ -291,24 +288,19 @@ class HomeDriver(QWidget):
         self._on_refresh()
 
     def refresh_pending(self):
-        """Called by MainWindow when a new_ride notification arrives."""
         self._on_refresh()
 
-    # ------------ profile ------------
-
+    #Profile
     def _show_profile(self):
         dlg = ProfileDialog(self.main_window, self)
         dlg.exec_()
         # Area / schedule / password might have changed
         self.refresh_ui()
 
-    # ------------ weather ------------
-
+    #Weather
     def _show_weather(self):
         """
-        Open the weather window.
-
-        Default location is always Beirut unless the user changes it
+         Default location is always Beirut unless the user changes it
         inside the weather window search box.
         """
         if self.weather_window is None:
@@ -319,13 +311,13 @@ class HomeDriver(QWidget):
         self.weather_window.raise_()
         self.weather_window.activateWindow()
 
-    # ------------ scheduled rides view ------------
+    #Scheduled rides view 
 
     def _show_scheduled_rides(self):
         dlg = ScheduledRidesDialog(self.main_window, role="driver", parent=self)
         dlg.exec_()
 
-    # ------------ status helpers ------------
+    # Status helpers 
 
     def _set_status_available(self):
         self._set_status("available")
@@ -352,7 +344,7 @@ class HomeDriver(QWidget):
                 resp.get("message", "Could not update status."),
             )
 
-    # ------------ helper to get selection ------------
+    # Get selection 
 
     def _get_selected_ride_id_and_passenger(self):
         row = self.table.currentRow()
@@ -375,8 +367,7 @@ class HomeDriver(QWidget):
         passenger = passenger_item.text()
         return ride_id, passenger
 
-    # ------------ handlers ------------
-
+    #Handlers 
     def _on_refresh(self):
         area = self.main_window.current_area
         if not area:
@@ -538,10 +529,10 @@ class HomeDriver(QWidget):
                 QMessageBox.warning(
                     self, "Rating error", f"Could not submit rating:\n{e}"
                 )
-
-        # Disconnect chat after ride completion so passenger gets
-        # a disconnect event and is prompted to rate the driver,
-        # and they can no longer chat after the ride.
+        """
+        Disconnect chat after ride completion so passenger gets a disconnect event and is prompted to rate the driver,
+        and they can no longer chat after the ride.
+        """
         if self.chat_server:
             try:
                 self.chat_server.disconnect()
@@ -556,8 +547,7 @@ class HomeDriver(QWidget):
         self.chat_box.append(f"[{_now_hhmm()}] [System] Ride ended.")
         self._on_refresh()
 
-    # ------------ scheduled ride notifications ------------
-
+    # Scheduled ride notifications 
     def handle_new_scheduled_ride(self, msg: dict):
         """
         Called by MainWindow when a 'scheduled_ride_created' notification arrives
@@ -603,7 +593,7 @@ class HomeDriver(QWidget):
         """
         Called by MainWindow when a 'scheduled_ride_updated' notification arrives
         for this driver, typically when a passenger cancels.
-        Expected msg shape (best-effort):
+        msg shape:
           {
             "action": "scheduled_ride_updated",
             "ride_id": ...,
@@ -623,8 +613,7 @@ class HomeDriver(QWidget):
 
         QMessageBox.information(self, "Scheduled ride update", text)
 
-    # ------------ chat hooks ------------
-
+    #  chat hooks 
     def _on_chat_received(self, msg: str):
         # Use the real passenger username if we know it, otherwise fall back
         name = self.passenger_username or "Passenger"
@@ -662,7 +651,7 @@ class HomeDriver(QWidget):
 
     def _on_chat_typing(self, _text: str):
         """
-        Called whenever the driver edits the chat input.
+        Called by MainWindowwhenever the driver edits the chat input.
         Rate-limit typing notifications.
         """
         import time as _time

@@ -30,13 +30,8 @@ def seconds_to_hhmm(seconds) -> str:
 class RideHistoryPage(QWidget):
     """
     Shows ride history for the current user (driver or passenger).
-
-    Expects MainWindow to provide:
-        - current_username
-        - current_role ("driver" or "passenger")
-        - api_client (RealtimeClient or compatible)
+    Expects MainWindow to provide current_username, current_role and api_client (RealtimeClient or compatible)
     """
-
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
@@ -132,7 +127,7 @@ class RideHistoryPage(QWidget):
             weekday_int = r.get("weekday")
             time_val = r.get("time")
 
-            # Optional rating fields (per-ride)
+            # Optional rating fields
             my_rating = (
                 r.get("my_rating")
                 or r.get("rating_given_by_me")

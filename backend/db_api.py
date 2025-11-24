@@ -4,13 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from .config import DB_PATH
 
-# ---------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------
-
-
+# Helper functions
 def time_to_seconds(time_str):
-    """Convert 'HH:MM' or 'HH:MM:SS' or '8:30AM' into seconds from midnight."""
+    """Converts 'HH:MM' or 'HH:MM:SS' or '8:30AM' into seconds from midnight."""
     from datetime import datetime
     formats = ['%H:%M', '%H:%M:%S', '%I:%M %p', '%I:%M%p']
     last_err = None
@@ -22,7 +18,6 @@ def time_to_seconds(time_str):
         except Exception as e:
             last_err = e
 
-    # Try auto-add space before AM/PM
     try:
         s = time_str.strip()
         if s.lower().endswith(("am", "pm")) and not s.lower().endswith((" am", " pm")):
@@ -57,11 +52,8 @@ def ensure_json(obj):
     return json.dumps(obj) if not isinstance(obj, str) else obj
 
 
-# ---------------------------------------------------------
+
 # DB Initialization
-# ---------------------------------------------------------
-
-
 def get_conn():
     return sqlite3.connect(DB_PATH)
 
@@ -87,7 +79,7 @@ def init_db():
     """
     )
 
-    # RIDES (same-day / immediate rides, as before)
+    # SAME-DAY RIDES
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS rides (
@@ -135,7 +127,7 @@ def init_db():
     """
     )
 
-    # --- MIGRATION: ensure preferred_driver_username column exists ---
+    # ensures preferred_driver_username column exists
     c.execute("PRAGMA table_info(user_preferences)")
     cols = [row[1] for row in c.fetchall()]
     if "preferred_driver_username" not in cols:
@@ -143,7 +135,7 @@ def init_db():
             "ALTER TABLE user_preferences ADD COLUMN preferred_driver_username TEXT"
         )
 
-    # --- NEW: scheduled_rides table for future/premium bookings ---
+    # [PREMIUM] SCHEDULED-RIDES
     c.execute(
         """
         CREATE TABLE IF NOT EXISTS scheduled_rides (
@@ -164,11 +156,8 @@ def init_db():
     conn.close()
 
 
-# ---------------------------------------------------------
+
 # USER MANAGEMENT
-# ---------------------------------------------------------
-
-
 def register_user(data):
     """
     data = {
@@ -242,7 +231,7 @@ def login_user(data):
     }
 
 
-# NEW: fetch basic profile information for a user
+# fetch basic profile info for a user
 def get_user_profile(username: str):
     conn = get_conn()
     c = conn.cursor()
@@ -277,7 +266,7 @@ def get_user_profile(username: str):
     }
 
 
-# NEW: update basic profile information (name, email, area, password, schedule)
+# update basic profile info (name, email, area, password, schedule)
 def update_user_profile(data: dict):
     """
     data should contain:
@@ -344,11 +333,8 @@ def update_user_profile(data: dict):
         conn.close()
 
 
-# ---------------------------------------------------------
+
 # USER PREFERENCES
-# ---------------------------------------------------------
-
-
 def get_user_preferences(username):
     conn = get_conn()
     c = conn.cursor()
@@ -431,11 +417,8 @@ def save_user_preferences(username, prefs):
     conn.close()
 
 
-# ---------------------------------------------------------
-# RIDES & MATCHING
-# ---------------------------------------------------------
 
-
+# RIDES & MATCHING PASSENGERS AND DRIVERS
 def create_ride_request(data):
     """
     data = {
@@ -480,7 +463,7 @@ def create_ride_request(data):
 
 
 def get_available_drivers(area, weekday, target_seconds):
-    """Return list of drivers whose weekly schedule matches within ±10 min."""
+    """Return list of drivers whose weekly schedule matches within +-10 min."""
     conn = get_conn()
     c = conn.cursor()
 
@@ -603,7 +586,6 @@ def complete_ride(ride_id, driver_username):
     conn.commit()
     ok = c.rowcount > 0
     conn.close()
-
     return ok
 
 
@@ -743,15 +725,12 @@ def get_ride_history(username, role):
     return {"status": "success", "rides": rides_out}
 
 
-# ---------------------------------------------------------
-# PREMIUM: list drivers (for browsing/selecting)
-# ---------------------------------------------------------
 
-
+# PREMIUM: LIST DRIVERS (FOR SEARCHING/BROWSING)
 def list_drivers(area: str = None):
     """
     Return drivers (optionally filtered by area) with their average rating.
-    The server layer will add online/status info.
+    The server layer will add status info.
     """
     conn = get_conn()
     c = conn.cursor()
@@ -798,19 +777,14 @@ def list_drivers(area: str = None):
     return {"status": "success", "drivers": drivers}
 
 
-# ---------------------------------------------------------
-# PREMIUM: scheduled rides (future bookings)
-# ---------------------------------------------------------
 
-
+# PREMIUM: SCHEDULED RIDES
 def find_drivers_for_datetime(area: str, date_str: str, time_str: str):
     """
-    Given an area + calendar date + time string, return drivers whose
-    weekly_schedule matches that weekday/time (±10 minutes), including
-    rating info (reusing list_drivers()).
+    Given an area + calendar date + time string, return drivers whose weekly_schedule matches that weekday/time, including
+    rating info.
 
-    This does NOT check whether drivers are currently online; it's for
-    future/premium scheduling.
+    This does NOT check whether drivers are currently online; it's for future scheduling.
     """
     try:
         dt = datetime.strptime(date_str, "%Y-%m-%d")
@@ -933,9 +907,7 @@ def get_scheduled_ride(ride_id: int):
 
 def get_scheduled_rides(username: str, role: str):
     """
-    Return scheduled rides for the given user & role.
-
-    role: "passenger" or "driver"
+    Return scheduled rides for the given user & role ("passenger" or "driver")
     """
     conn = get_conn()
     c = conn.cursor()
@@ -981,8 +953,7 @@ def get_scheduled_rides(username: str, role: str):
 
 def update_scheduled_ride_status(ride_id: int, status: str) -> bool:
     """
-    Update the status of a scheduled ride.
-    Returns True if a row was updated.
+    Update the status of a scheduled ride. Returns True if a row was updated.
     """
     conn = get_conn()
     c = conn.cursor()
@@ -1000,11 +971,8 @@ def update_scheduled_ride_status(ride_id: int, status: str) -> bool:
     return ok
 
 
-# ---------------------------------------------------------
+
 # RATINGS
-# ---------------------------------------------------------
-
-
 def submit_rating(data):
     """
     data = {

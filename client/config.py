@@ -1,5 +1,3 @@
-# client/config.py
-#
 # Local client-side configuration for connecting to the backend server.
 
 # IP/host where your backend server is running

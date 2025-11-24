@@ -16,5 +16,5 @@ DEFAULT_P2P_PORT = 6000
 # Time window (in minutes) for matching drivers near requested time
 DRIVER_TIME_MATCH_WINDOW_MIN = 10
 
-# Optional: Weather API key if you want to centralize it
-WEATHER_API_KEY = "7a77199e48174a098bf174356251411"  # or override via env
+# Centralized weather API key
+WEATHER_API_KEY = "7a77199e48174a098bf174356251411"

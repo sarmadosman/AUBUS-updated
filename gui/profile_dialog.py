@@ -26,12 +26,12 @@ class ProfileDialog(QDialog):
     def __init__(self, main_window, parent=None):
         super().__init__(parent)
         self.main_window = main_window
-        self.role = main_window.current_role  # "driver" or "passenger"
+        self.role = main_window.current_role
 
         self.setWindowTitle("Edit Profile")
         self.setModal(True)
 
-        self.schedule_edits = {}  # day -> QLineEdit
+        self.schedule_edits = {}
 
         self._build_ui()
         self._load_profile()
@@ -49,7 +49,6 @@ class ProfileDialog(QDialog):
         self.info_label.setStyleSheet("color: gray;")
         layout.addWidget(self.info_label)
 
-        # ----- Basic info form -----
         form = QFormLayout()
         self.name_edit = QLineEdit()
         self.email_edit = QLineEdit()
@@ -66,9 +65,7 @@ class ProfileDialog(QDialog):
 
         layout.addLayout(form)
 
-        # ==============================
-        # SHOW WEEKLY SCHEDULE *ONLY* FOR DRIVERS
-        # ==============================
+        # SHOW WEEKLY SCHEDULE FOR DRIVERS
         if self.role == "driver":
             schedule_label = QLabel("Weekly schedule (HH:MM, optional)")
             schedule_label.setAlignment(Qt.AlignLeft)
@@ -84,7 +81,7 @@ class ProfileDialog(QDialog):
 
             layout.addLayout(sched_form)
 
-        # ----- Buttons -----
+        #BUTTONS
         btn_row = QHBoxLayout()
         btn_row.addStretch()
         self.save_btn = QPushButton("Save")
@@ -111,13 +108,13 @@ class ProfileDialog(QDialog):
             QMessageBox.critical(self, "Error", resp.get("message", "Failed."))
             return
 
-        # Basic fields
+        #BASIC FIELDS
         self.name_edit.setText(resp.get("name", "") or "")
         self.email_edit.setText(resp.get("email", "") or "")
         self.area_edit.setText(resp.get("area", "") or "")
         self.password_edit.clear()
 
-        # Load schedule ONLY if driver
+        #ADDITIONAL DRIVER FIELDS
         if self.role == "driver":
             schedule = resp.get("weekly_schedule") or {}
             for day in DAYS:
