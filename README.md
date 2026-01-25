@@ -1,5 +1,3 @@
-README.md:
-
 Overview:
 
 AUBus uses a simple TCP JSON protocol.
@@ -242,5 +240,6 @@ Sent to passengers
   "action": "ride_accepted",
   ...
 }
+
 
 The GUI must listen on a persistent socket to receive these, which is why we use TCP (supports persistent connection).
